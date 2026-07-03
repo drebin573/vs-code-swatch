@@ -1,32 +1,66 @@
-# React + TypeScript + Vite
+# Theme Forge
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A web-based theme builder for VS Code and every editor built on it — Cursor, VSCodium, Windsurf, and friends. Free, open source, no accounts.
 
-Currently, two official plugins are available:
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## About
 
-## React Compiler
+Designing a VS Code theme means hand-editing a JSON file with ~950 color keys and reloading to see what changed. Theme Forge gives you a live, pixel-faithful workbench preview instead: click any part of the mock editor to jump to its color, tweak it with a picker, and watch the whole workbench — syntax highlighting and integrated terminal included — update in real time.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Unlike other theme builders, it's fully open source and adds the two things they always seem to miss: **palette import** (build a theme from an image, a coolors link, or your terminal's color scheme) and **ANSI terminal colors** (with a live terminal preview).
 
-## Expanding the Oxlint configuration
+## Features
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **Faithful preview** — every default resolved from VS Code's own source, syntax highlighting rendered with real TextMate grammars (Shiki), so what you see is what ships
+- **All 944 color keys**, grouped and searchable, with VS Code's official descriptions and defaults
+- **Click-to-edit** — click any region of the preview to select its color key
+- **Palette import** — paste hex lists / CSS variables / Tailwind configs / coolors.co URLs, drop an image, or import terminal schemes: iTerm2 `.itermcolors`, base16 YAML, Alacritty, Kitty, Ghostty, Windows Terminal
+- **Theme generation** — synthesize a complete, coherent theme (workbench + terminal + syntax tokens) from any palette, in OKLCH with contrast guarantees
+- **ANSI colors** — first-class terminal color editing with a live terminal pane
+- **Remix anything** — import any theme's JSON or `.vsix` and start from there
+- **One-click `.vsix` export** — an installable extension package built in your browser; also theme JSON, a `settings.json` snippet, and shareable links (the whole theme compressed into the URL)
+- **TextMate & semantic token editors**, multi-theme workspace, undo/redo, autosave to localStorage
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Everything runs client-side. Your themes never leave your browser unless you export them.
+
+## Usage
+
+Open the app, pick a starter (Dark/Light Modern), and start clicking things. The typical flows:
+
+- **From scratch**: New dark → click the preview or search keys → tweak → Export.
+- **From a palette**: Import… → paste colors or drop an image → *Generate dark theme* → refine.
+- **From your terminal setup**: Import… → drop your iTerm2/Ghostty/Alacritty/Kitty scheme → *Apply to terminal colors* (or generate a whole theme from it).
+- **From an existing theme**: Import… → drop a theme `.json` or `.vsix` → remix.
+
+To install your theme: **Export ▾ → Download .vsix**, then in VS Code run *Extensions: Install from VSIX…* (or `code --install-extension my-theme-1.0.0.vsix`).
+
+## Development
+
+```bash
+npm install
+npm run dev     # start the app
+npx vitest run  # unit tests (palette parsers, generator, vsix packaging)
+npm run build   # production build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Regenerating VS Code default data
+
+`src/data/` (color defaults, key groups, starter templates) is generated from the VS Code sources so it can track upstream releases:
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/microsoft/vscode.git /tmp/vscode
+git -C /tmp/vscode sparse-checkout set src/vs extensions
+curl -sL https://raw.githubusercontent.com/microsoft/vscode-docs/main/api/references/theme-color.md -o /tmp/theme-color.md
+node scripts/generate-defaults.ts /tmp/vscode /tmp/theme-color.md
+```
+
+The generator parses every `registerColor()` call with the TypeScript compiler API, ports VS Code's exact color math (`lighten`/`darken`/`transparent`/`mix`/…), and resolves the full reference graph to concrete hex values per theme type.
+
+## Contributing
+
+Issues and PRs are welcome — this project exists because the alternatives weren't open source. Good first contributions: more preview surfaces (diff editor, notifications, quick input), more terminal scheme formats, better palette→slot heuristics.
+
+## License
+
+Theme Forge is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. Vendored default-color data is derived from [microsoft/vscode](https://github.com/microsoft/vscode) (MIT).

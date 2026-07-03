@@ -1,18 +1,8 @@
 import { cssVar } from '../theme/cssVars';
 import { useUiStore } from '../store/uiStore';
-import { samples } from '../data/samples';
+import { fileNames, samples } from '../data/samples';
 import { ChevronRight, CircleDot, CloseIcon, EllipsisIcon, SplitIcon } from './icons';
 import { CodeView } from './CodeView';
-
-export const fileNames: Record<string, string> = {
-  tsx: 'Workbench.tsx',
-  python: 'palette.py',
-  rust: 'mapper.rs',
-  go: 'rank.go',
-  css: 'workbench.css',
-  json: 'theme.json',
-  markdown: 'README.md',
-};
 
 function Tab({ label, active, dirty, onSelect }: { label: string; active: boolean; dirty: boolean; onSelect?: () => void }) {
   return (

@@ -1,5 +1,5 @@
 {
-  "name": "vs-theme-builder",
+  "name": "theme-forge",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json --noEmit"
   },
   "dependencies": {
     "culori": "^4.0.2",
@@ -24,15 +26,19 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
+    "@testing-library/react": "^16.3.2",
     "@types/culori": "^4.0.1",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "happy-dom": "^20.10.6",
     "oxlint": "^1.71.0",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^4.1.9"
-  }
+  },
+  "description": "Open-source web-based theme builder for VS Code and VS Code-based editors",
+  "license": "MIT"
 }

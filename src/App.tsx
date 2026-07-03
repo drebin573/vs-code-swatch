@@ -5,9 +5,23 @@ import { InspectorPanel } from './app/InspectorPanel';
 import { ImportDialog } from './app/ImportDialog';
 import { PaletteRail } from './app/PaletteRail';
 import { Workbench } from './preview/Workbench';
-import { undo, redo } from './store/themeStore';
+import { undo, redo, useThemeStore } from './store/themeStore';
+import { clearShareHash, themeFromLocationHash } from './theme/share';
+
+// Module-level so React 19 StrictMode's double effect run can't import twice.
+let handledShareHash = false;
 
 export default function App() {
+  useEffect(() => {
+    if (handledShareHash) return;
+    handledShareHash = true;
+    const shared = themeFromLocationHash();
+    if (shared) {
+      useThemeStore.getState().addTheme(shared);
+      clearShareHash();
+    }
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {

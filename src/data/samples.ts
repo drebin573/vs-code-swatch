@@ -4,6 +4,16 @@ export interface Sample {
   code: string;
 }
 
+export const fileNames: Record<string, string> = {
+  tsx: 'Workbench.tsx',
+  python: 'palette.py',
+  rust: 'mapper.rs',
+  go: 'rank.go',
+  css: 'workbench.css',
+  json: 'theme.json',
+  markdown: 'README.md',
+};
+
 export const samples: Sample[] = [
   {
     lang: 'tsx',

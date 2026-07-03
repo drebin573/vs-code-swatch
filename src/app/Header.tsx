@@ -1,6 +1,6 @@
 import { useActiveTheme, useThemeStore, undo, redo } from '../store/themeStore';
 import { usePaletteStore } from '../store/paletteStore';
-import { themeToJson, downloadFile, slugify } from '../theme/io';
+import { ExportMenu } from './ExportMenu';
 import darkModern from '../data/templates/dark-modern.json';
 import lightModern from '../data/templates/light-modern.json';
 import type { ThemeDoc } from '../theme/types';
@@ -85,12 +85,7 @@ export function Header() {
       <button className={btn} onClick={() => setImportOpen(true)}>
         Import…
       </button>
-      <button
-        className={`${btn} border-sky-700 bg-sky-900/40 text-sky-200`}
-        onClick={() => downloadFile(`${slugify(theme.name)}-color-theme.json`, themeToJson(theme))}
-      >
-        Export JSON
-      </button>
+      <ExportMenu />
     </header>
   );
 }
