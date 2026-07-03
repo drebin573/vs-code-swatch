@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Header } from './app/Header';
-import { KeyList } from './app/KeyList';
+import { LeftRail } from './app/LeftRail';
 import { InspectorPanel } from './app/InspectorPanel';
 import { Workbench } from './preview/Workbench';
 import { undo, redo } from './store/themeStore';
@@ -24,7 +24,7 @@ export default function App() {
     <div className="flex h-screen flex-col bg-zinc-950 text-zinc-200">
       <Header />
       <div className="flex min-h-0 flex-1">
-        <KeyList />
+        <LeftRail />
         <main className="min-w-0 flex-1 p-3">
           <div className="h-full overflow-hidden rounded-lg border border-zinc-800 shadow-2xl">
             <Workbench />

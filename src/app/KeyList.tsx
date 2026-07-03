@@ -54,7 +54,7 @@ export function KeyList() {
   }, [q]);
 
   return (
-    <div className="flex w-[260px] shrink-0 flex-col border-r border-zinc-800 bg-zinc-900">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2">
         <input
           className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-[12px] text-zinc-200 placeholder-zinc-500"

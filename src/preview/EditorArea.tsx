@@ -1,14 +1,20 @@
 import { cssVar } from '../theme/cssVars';
+import { useUiStore } from '../store/uiStore';
+import { samples } from '../data/samples';
 import { ChevronRight, CircleDot, CloseIcon, EllipsisIcon, SplitIcon } from './icons';
 import { CodeView } from './CodeView';
 
-const tabs = [
-  { label: 'Workbench.tsx', active: true, dirty: false },
-  { label: 'store.ts', active: false, dirty: true },
-  { label: 'theme.json', active: false, dirty: false },
-];
+export const fileNames: Record<string, string> = {
+  tsx: 'Workbench.tsx',
+  python: 'palette.py',
+  rust: 'mapper.rs',
+  go: 'rank.go',
+  css: 'workbench.css',
+  json: 'theme.json',
+  markdown: 'README.md',
+};
 
-function Tab({ label, active, dirty }: (typeof tabs)[number]) {
+function Tab({ label, active, dirty, onSelect }: { label: string; active: boolean; dirty: boolean; onSelect?: () => void }) {
   return (
     <div
       data-keys={
@@ -17,6 +23,13 @@ function Tab({ label, active, dirty }: (typeof tabs)[number]) {
           : 'tab.inactiveBackground tab.inactiveForeground tab.border'
       }
       className="relative flex h-[35px] items-center gap-2 px-3"
+      onClick={
+        onSelect &&
+        ((e) => {
+          e.stopPropagation();
+          onSelect();
+        })
+      }
       style={{
         background: active ? cssVar('tab.activeBackground') : cssVar('tab.inactiveBackground'),
         color: active ? cssVar('tab.activeForeground') : cssVar('tab.inactiveForeground'),
@@ -32,19 +45,31 @@ function Tab({ label, active, dirty }: (typeof tabs)[number]) {
 }
 
 export function EditorArea() {
+  const { previewLanguage, setPreviewLanguage } = useUiStore();
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         data-keys="editorGroupHeader.tabsBackground editorGroupHeader.tabsBorder"
-        className="flex h-[35px] shrink-0 items-center"
+        className="flex h-[35px] shrink-0 items-center overflow-hidden"
         style={{
           background: cssVar('editorGroupHeader.tabsBackground'),
           borderBottom: `1px solid ${cssVar('editorGroupHeader.tabsBorder', 'transparent')}`,
         }}
       >
-        {tabs.map((t) => (
-          <Tab key={t.label} {...t} />
-        ))}
+        {samples.map((s, i) => {
+          const active = s.lang === previewLanguage;
+          return (
+            <Tab
+              key={s.lang}
+              label={fileNames[s.lang] ?? s.label}
+              active={active}
+              dirty={i === 1}
+              // Inactive tabs switch the previewed file; the active tab
+              // falls through to click-to-edit its color keys.
+              onSelect={active ? undefined : () => setPreviewLanguage(s.lang)}
+            />
+          );
+        })}
         <div className="flex-1" />
         <div className="flex items-center gap-2 px-2 opacity-70">
           <SplitIcon size={14} />
@@ -61,7 +86,7 @@ export function EditorArea() {
       >
         src <ChevronRight size={12} /> preview <ChevronRight size={12} />{' '}
         <span data-keys="breadcrumb.focusForeground" style={{ color: cssVar('breadcrumb.focusForeground', 'inherit') }}>
-          Workbench.tsx
+          {fileNames[previewLanguage] ?? previewLanguage}
         </span>
       </div>
       <CodeView />
