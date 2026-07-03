@@ -723,7 +723,10 @@ for (const [src, dest] of templates) {
   const theme = loadThemeFile(path.join(themesDir, src));
   delete theme.include;
   delete theme.$schema;
-  fs.writeFileSync(path.join(outDir, 'templates', dest), JSON.stringify(theme, null, 2));
+  // Built-in theme files omit "type" (the extension manifest's uiTheme carries
+  // it); our ThemeDoc requires it, so derive it from the filename.
+  const ordered = { name: theme.name, type: src.startsWith('light') ? 'light' : 'dark', ...theme };
+  fs.writeFileSync(path.join(outDir, 'templates', dest), JSON.stringify(ordered, null, 2));
 }
 
 // ---------------------------------------------------------------------------

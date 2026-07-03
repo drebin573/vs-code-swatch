@@ -124,9 +124,27 @@ export const useThemeStore = create<ThemeState>()(
         limit: 200,
       },
     ),
-    { name: 'vs-theme-builder' },
+    {
+      name: 'vs-theme-builder',
+      version: 1,
+      // v0 shipped templates without "type"; heal any persisted theme.
+      migrate: (persisted) => {
+        const state = persisted as ThemeState;
+        for (const doc of Object.values(state.themes ?? {})) {
+          if (doc.type !== 'dark' && doc.type !== 'light') doc.type = guessType(doc);
+        }
+        return state;
+      },
+    },
   ),
 );
+
+function guessType(doc: ThemeDoc): 'dark' | 'light' {
+  const m = /^#(..)(..)(..)/.exec(doc.colors?.['editor.background'] ?? '');
+  if (!m) return 'dark';
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128 ? 'dark' : 'light';
+}
 
 export const useActiveTheme = (): ThemeDoc => useThemeStore((s) => s.themes[s.activeId]);
 

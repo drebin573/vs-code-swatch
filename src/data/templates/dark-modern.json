@@ -1,5 +1,6 @@
 {
   "name": "Dark Modern",
+  "type": "dark",
   "colors": {
     "checkbox.border": "#3C3C3C",
     "editor.background": "#1F1F1F",

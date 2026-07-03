@@ -1,5 +1,6 @@
 {
   "name": "Light+",
+  "type": "light",
   "colors": {
     "checkbox.border": "#919191",
     "editor.background": "#FFFFFF",

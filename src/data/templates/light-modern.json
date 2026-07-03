@@ -1,5 +1,6 @@
 {
   "name": "Light Modern",
+  "type": "light",
   "colors": {
     "checkbox.border": "#CECECE",
     "editor.background": "#FFFFFF",
