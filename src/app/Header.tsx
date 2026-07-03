@@ -1,5 +1,6 @@
 import { useActiveTheme, useThemeStore, undo, redo } from '../store/themeStore';
-import { parseThemeJson, themeToJson, downloadFile, pickFile, slugify } from '../theme/io';
+import { usePaletteStore } from '../store/paletteStore';
+import { themeToJson, downloadFile, slugify } from '../theme/io';
 import darkModern from '../data/templates/dark-modern.json';
 import lightModern from '../data/templates/light-modern.json';
 import type { ThemeDoc } from '../theme/types';
@@ -9,19 +10,9 @@ const btn =
 
 export function Header() {
   const theme = useActiveTheme();
-  const { themes, order, activeId, setActive, addTheme, duplicateTheme, deleteTheme, renameTheme, setThemeType, replaceActiveTheme } =
+  const { themes, order, activeId, setActive, addTheme, duplicateTheme, deleteTheme, renameTheme, setThemeType } =
     useThemeStore();
-
-  const importJson = async () => {
-    const file = await pickFile('.json,.jsonc');
-    if (!file) return;
-    try {
-      const doc = parseThemeJson(await file.text());
-      addTheme(doc);
-    } catch (e) {
-      alert(`Could not parse theme file: ${e instanceof Error ? e.message : e}`);
-    }
-  };
+  const setImportOpen = usePaletteStore((s) => s.setImportOpen);
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-800 bg-zinc-900 px-3">
@@ -91,7 +82,7 @@ export function Header() {
 
       <div className="mx-1 h-5 w-px bg-zinc-700" />
 
-      <button className={btn} onClick={importJson}>
+      <button className={btn} onClick={() => setImportOpen(true)}>
         Import…
       </button>
       <button
@@ -100,7 +91,6 @@ export function Header() {
       >
         Export JSON
       </button>
-      <button className={btn} onClick={() => replaceActiveTheme(theme)} hidden />
     </header>
   );
 }

@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Header } from './app/Header';
 import { LeftRail } from './app/LeftRail';
 import { InspectorPanel } from './app/InspectorPanel';
+import { ImportDialog } from './app/ImportDialog';
+import { PaletteRail } from './app/PaletteRail';
 import { Workbench } from './preview/Workbench';
 import { undo, redo } from './store/themeStore';
 
@@ -25,13 +27,15 @@ export default function App() {
       <Header />
       <div className="flex min-h-0 flex-1">
         <LeftRail />
-        <main className="min-w-0 flex-1 p-3">
-          <div className="h-full overflow-hidden rounded-lg border border-zinc-800 shadow-2xl">
+        <main className="flex min-w-0 flex-1 flex-col p-3">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-zinc-800 shadow-2xl">
             <Workbench />
           </div>
+          <PaletteRail />
         </main>
         <InspectorPanel />
       </div>
+      <ImportDialog />
     </div>
   );
 }
