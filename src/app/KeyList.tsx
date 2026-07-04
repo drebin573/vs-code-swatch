@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { colorGroups, resolveColor } from '../theme/defaults';
-import { useActiveTheme } from '../store/themeStore';
+import { allColorKeys, colorGroups, labelForKey, resolveColor, searchTextForKey } from '../theme/defaults';
+import { changedColorKeys, useActiveBaseline, useActiveTheme } from '../store/themeStore';
 import { useUiStore } from '../store/uiStore';
 import type { ThemeDoc } from '../theme/types';
 
@@ -17,22 +17,22 @@ function Swatch({ value }: { value: string | null }) {
   );
 }
 
-function KeyRow({ theme, colorKey }: { theme: ThemeDoc; colorKey: string }) {
+function KeyRow({ theme, colorKey, changed }: { theme: ThemeDoc; colorKey: string; changed: boolean }) {
   const { selection, selectKey } = useUiStore();
   const isSelected = selection?.kind === 'color' && selection.key === colorKey;
-  const isSet = colorKey in theme.colors;
   const value = resolveColor(theme, colorKey);
   return (
     <button
       data-list-key={colorKey}
+      title={colorKey}
       className={`flex w-full items-center gap-2 rounded px-2 py-[3px] text-left text-[12px] ${
         isSelected ? 'bg-sky-900/60 text-sky-100' : 'text-zinc-300 hover:bg-zinc-800'
       }`}
       onClick={() => selectKey(colorKey, 'list')}
     >
       <Swatch value={value} />
-      <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{colorKey}</span>
-      {isSet && <span className="size-1.5 shrink-0 rounded-full bg-sky-400" title="Set in this theme" />}
+      <span className="min-w-0 flex-1 truncate">{labelForKey(colorKey)}</span>
+      {changed && <span className="size-1.5 shrink-0 rounded-full bg-sky-400" title="Changed by you" />}
     </button>
   );
 }
@@ -40,11 +40,43 @@ function KeyRow({ theme, colorKey }: { theme: ThemeDoc; colorKey: string }) {
 // Module-level so remounts (tab switches) don't replay an old reveal request.
 let consumedListRevealTick = 0;
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export function KeyList() {
   const theme = useActiveTheme();
+  const baseline = useActiveBaseline();
+  const changed = useMemo(() => changedColorKeys(theme, baseline), [theme, baseline]);
   const { search, setSearch, listReveal } = useUiStore();
   const [open, setOpen] = useState<Record<string, boolean>>({ 'Base colors': true });
   const listRef = useRef<HTMLDivElement>(null);
+
+  const q = search.trim().toLowerCase();
+  const visibleGroups = useMemo(() => {
+    const rawTokens = q.split(/\s+/).filter(Boolean);
+    if (rawTokens.length === 0) return colorGroups;
+    // Dots in a query mean key-path words: "terminal.ansi" → "terminal ansi".
+    const wordTokens = rawTokens.map((t) => t.replace(/\./g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const descRes = rawTokens.map((t) => new RegExp('\\b' + escapeRegExp(t), 'i'));
+    // Strictest tier that matches anything wins: word-split key text (substrings
+    // can't span word joints), then raw key ("statusbar"), then plain-English
+    // word starts in descriptions ("drag").
+    const tiers: ((k: (typeof colorGroups)[number]['keys'][number]) => boolean)[] = [
+      (k) => wordTokens.every((t) => searchTextForKey(k.key).includes(t)),
+      (k) => rawTokens.every((t) => k.key.toLowerCase().includes(t)),
+      (k) => descRes.every((r) => r.test(k.description)),
+    ];
+    for (const matches of tiers) {
+      const groups = colorGroups
+        .map((g) => ({ ...g, keys: g.keys.filter(matches) }))
+        .filter((g) => g.keys.length > 0);
+      if (groups.length > 0) return groups;
+    }
+    return [];
+  }, [q]);
+  const visibleKeys = useMemo(
+    () => new Set(visibleGroups.flatMap((g) => g.keys.map((k) => k.key))),
+    [visibleGroups],
+  );
 
   // Preview clicks reveal the key here too: expand its group, drop a search
   // filter that would hide it, and scroll its row into view.
@@ -53,11 +85,8 @@ export function KeyList() {
     consumedListRevealTick = listReveal.tick;
     const group = colorGroups.find((g) => g.keys.some((k) => k.key === listReveal.key));
     if (!group) return;
-    const entry = group.keys.find((k) => k.key === listReveal.key)!;
-    const { search: query, setSearch: set } = useUiStore.getState();
-    const filter = query.trim().toLowerCase();
-    if (filter && !entry.key.toLowerCase().includes(filter) && !entry.description.toLowerCase().includes(filter)) {
-      set('');
+    if (q && !visibleKeys.has(listReveal.key)) {
+      useUiStore.getState().setSearch('');
     }
     setOpen((o) => ({ ...o, [group.group]: true }));
     // Next macrotask: the expanded/unfiltered rows have rendered by then.
@@ -67,27 +96,14 @@ export function KeyList() {
         ?.scrollIntoView?.({ block: 'nearest' });
     }, 0);
     return () => window.clearTimeout(id);
-  }, [listReveal]);
-
-  const q = search.trim().toLowerCase();
-  const visibleGroups = useMemo(() => {
-    if (!q) return colorGroups;
-    return colorGroups
-      .map((g) => ({
-        ...g,
-        keys: g.keys.filter(
-          (k) => k.key.toLowerCase().includes(q) || k.description.toLowerCase().includes(q),
-        ),
-      }))
-      .filter((g) => g.keys.length > 0);
-  }, [q]);
+  }, [listReveal, q, visibleKeys]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2">
         <input
           className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-[12px] text-zinc-200 placeholder-zinc-500"
-          placeholder="Search 944 colors…  (e.g. terminal.ansi)"
+          placeholder={`Search ${allColorKeys.length} colors…  (e.g. ansi bright)`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -95,7 +111,7 @@ export function KeyList() {
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-1 pb-4">
         {visibleGroups.map((g) => {
           const expanded = q ? true : (open[g.group] ?? false);
-          const setCount = g.keys.filter((k) => k.key in theme.colors).length;
+          const changedCount = g.keys.filter((k) => changed.has(k.key)).length;
           return (
             <div key={g.group}>
               <button
@@ -104,16 +120,25 @@ export function KeyList() {
               >
                 <span className="w-3">{expanded ? '▾' : '▸'}</span>
                 <span className="flex-1">{g.group}</span>
-                {setCount > 0 && (
-                  <span className="min-w-[30px] rounded-full bg-sky-900 px-1.5 py-px text-center text-[10px] tabular-nums text-sky-200">
-                    {setCount}
+                {changedCount > 0 && (
+                  <span
+                    className="min-w-[30px] rounded-full bg-sky-900 px-1.5 py-px text-center text-[10px] tabular-nums text-sky-200"
+                    title={`${changedCount} changed by you`}
+                  >
+                    {changedCount}
                   </span>
                 )}
-                <span className="min-w-[30px] rounded-full bg-zinc-800/80 px-1.5 py-px text-center text-[10px] tabular-nums text-zinc-500">
+                <span
+                  className="min-w-[30px] rounded-full bg-zinc-800/80 px-1.5 py-px text-center text-[10px] tabular-nums text-zinc-500"
+                  title={`${g.keys.length} colors in this group`}
+                >
                   {g.keys.length}
                 </span>
               </button>
-              {expanded && g.keys.map((k) => <KeyRow key={k.key} theme={theme} colorKey={k.key} />)}
+              {expanded &&
+                g.keys.map((k) => (
+                  <KeyRow key={k.key} theme={theme} colorKey={k.key} changed={changed.has(k.key)} />
+                ))}
             </div>
           );
         })}

@@ -22,10 +22,11 @@ describe('App', () => {
     render(<App />);
     const search = screen.getByPlaceholderText(/Search 944 colors/);
     fireEvent.change(search, { target: { value: 'terminal.ansiRed' } });
-    const row = await screen.findByText('terminal.ansiRed');
+    // Row shows a readable label now; the raw key lives in its title attribute.
+    const row = await screen.findByTitle('terminal.ansiRed');
     fireEvent.click(row);
     // Inspector shows the key name as a heading plus its description.
-    expect(screen.getAllByText('terminal.ansiRed').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('terminal.ansiRed')).toBeTruthy();
     expect(screen.getByText(/Clear|inherited default|set in theme/)).toBeTruthy();
     cleanup();
   });
