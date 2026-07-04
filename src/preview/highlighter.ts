@@ -14,9 +14,13 @@ function getHighlighter(): Promise<Highlighter> {
   return highlighterPromise;
 }
 
-// Re-registering under the same name replaces the previous registration,
-// so live edits don't accumulate stale themes.
-const PREVIEW_THEME = 'preview';
+// Shiki only re-applies a theme to its tokenizer when the theme *name*
+// changes (`_lastTheme !== name` guard in @shikijs/primitive setTheme), so
+// re-registering under one constant name leaves tokenization stale until a
+// full reload. Alternating between two names defeats the guard while keeping
+// the registry bounded at two entries.
+const PREVIEW_THEMES = ['preview-a', 'preview-b'] as const;
+let previewFlip = 0;
 
 /**
  * Tokenize `code` with the active theme's actual TextMate rules — the exact
@@ -48,8 +52,10 @@ export function useHighlightedTokens(theme: ThemeDoc, lang: string, code: string
   return useMemo(() => {
     if (!highlighter) return null;
     try {
+      previewFlip = 1 - previewFlip;
+      const previewTheme = PREVIEW_THEMES[previewFlip];
       highlighter.loadThemeSync({
-        name: PREVIEW_THEME,
+        name: previewTheme,
         type: theme.type,
         colors: {
           ...(editorForeground ? { 'editor.foreground': editorForeground } : {}),
@@ -59,7 +65,7 @@ export function useHighlightedTokens(theme: ThemeDoc, lang: string, code: string
         semanticHighlighting: theme.semanticHighlighting,
         semanticTokenColors: theme.semanticTokenColors,
       } as never);
-      return highlighter.codeToTokensBase(code, { lang: lang as never, theme: PREVIEW_THEME as never });
+      return highlighter.codeToTokensBase(code, { lang: lang as never, theme: previewTheme as never });
     } catch (e) {
       console.warn('highlight failed', e);
       return null;

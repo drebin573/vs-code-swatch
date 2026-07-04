@@ -3,7 +3,7 @@ import { Header } from './app/Header';
 import { LeftRail } from './app/LeftRail';
 import { InspectorPanel } from './app/InspectorPanel';
 import { ImportDialog } from './app/ImportDialog';
-import { PaletteRail } from './app/PaletteRail';
+import { KofiBadge } from './app/KofiBadge';
 import { Workbench } from './preview/Workbench';
 import { undo, redo, useThemeStore } from './store/themeStore';
 import { clearShareHash, themeFromLocationHash } from './theme/share';
@@ -37,19 +37,19 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950 text-zinc-200">
+    <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-200">
       <Header />
       <div className="flex min-h-0 flex-1">
         <LeftRail />
-        <main className="flex min-w-0 flex-1 flex-col p-3">
+        <main className="flex min-w-0 flex-1 flex-col p-1.5 sm:p-3">
           <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-zinc-800 shadow-2xl">
             <Workbench />
           </div>
-          <PaletteRail />
         </main>
         <InspectorPanel />
       </div>
       <ImportDialog />
+      <KofiBadge />
     </div>
   );
 }

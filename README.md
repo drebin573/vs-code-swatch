@@ -1,4 +1,4 @@
-# Theme Forge
+# Codeswatch
 
 A web-based theme builder for VS Code and every editor built on it — Cursor, VSCodium, Windsurf, and friends. Free, open source, no accounts.
 
@@ -6,7 +6,7 @@ A web-based theme builder for VS Code and every editor built on it — Cursor, V
 
 ## About
 
-Designing a VS Code theme means hand-editing a JSON file with ~950 color keys and reloading to see what changed. Theme Forge gives you a live, pixel-faithful workbench preview instead: click any part of the mock editor to jump to its color, tweak it with a picker, and watch the whole workbench — syntax highlighting and integrated terminal included — update in real time.
+Designing a VS Code theme means hand-editing a JSON file with ~950 color keys and reloading to see what changed. Codeswatch gives you a live, pixel-faithful workbench preview instead: click any part of the mock editor to jump to its color, tweak it with a picker, and watch the whole workbench — syntax highlighting and integrated terminal included — update in real time.
 
 Unlike other theme builders, it's fully open source and adds the two things they always seem to miss: **palette import** (build a theme from an image, a coolors link, or your terminal's color scheme) and **ANSI terminal colors** (with a live terminal preview).
 
@@ -63,4 +63,4 @@ Issues and PRs are welcome — this project exists because the alternatives were
 
 ## License
 
-Theme Forge is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. Vendored default-color data is derived from [microsoft/vscode](https://github.com/microsoft/vscode) (MIT).
+Codeswatch is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. Vendored default-color data is derived from [microsoft/vscode](https://github.com/microsoft/vscode) (MIT).

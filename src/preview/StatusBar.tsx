@@ -5,7 +5,7 @@ export function StatusBar() {
   return (
     <div
       data-keys="statusBar.background statusBar.foreground statusBar.border"
-      className="flex h-[22px] shrink-0 items-center gap-3 pr-3 text-[11.5px]"
+      className="flex h-[22px] shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap pr-3 text-[11.5px]"
       style={{
         background: cssVar('statusBar.background'),
         color: cssVar('statusBar.foreground'),
@@ -30,9 +30,9 @@ export function StatusBar() {
         <ErrorIcon size={12} /> 0 <WarningIcon size={12} /> 2
       </span>
       <div className="flex-1" />
-      <span>Ln 7, Col 42</span>
-      <span>Spaces: 2</span>
-      <span>UTF-8</span>
+      <span className="hidden sm:inline">Ln 7, Col 42</span>
+      <span className="hidden md:inline">Spaces: 2</span>
+      <span className="hidden md:inline">UTF-8</span>
       <span>TypeScript React</span>
       <BellIcon size={13} />
     </div>

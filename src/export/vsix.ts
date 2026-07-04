@@ -12,7 +12,7 @@ function xmlEscape(s: string): string {
   return s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-export function buildVsix(doc: ThemeDoc, publisher = 'theme-forge'): { filename: string; data: Uint8Array } {
+export function buildVsix(doc: ThemeDoc, publisher = 'codeswatch'): { filename: string; data: Uint8Array } {
   const slug = slugify(doc.name);
   const version = '1.0.0';
   const themePath = `themes/${slug}-color-theme.json`;
@@ -20,7 +20,7 @@ export function buildVsix(doc: ThemeDoc, publisher = 'theme-forge'): { filename:
   const manifest = {
     name: slug,
     displayName: doc.name,
-    description: `${doc.name} — a color theme built with Theme Forge`,
+    description: `${doc.name} — a color theme built with Codeswatch`,
     version,
     publisher,
     engines: { vscode: '^1.0.0' },
@@ -39,7 +39,7 @@ export function buildVsix(doc: ThemeDoc, publisher = 'theme-forge'): { filename:
   const readme = `# ${doc.name}
 
 A ${doc.type} color theme for VS Code and VS Code-based editors, built with
-[Theme Forge](https://github.com/camhardy/vs-theme-builder).
+[Codeswatch](https://github.com/camhardy/codeswatch).
 
 ## Install
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useActiveTheme, useThemeStore } from '../store/themeStore';
+import { useUiStore } from '../store/uiStore';
 import type { TokenColorRule } from '../theme/types';
-import { ColorField } from './ColorField';
 
 const STYLE_FLAGS = ['italic', 'bold', 'underline', 'strikethrough'] as const;
 
@@ -15,6 +15,8 @@ function RuleRow({
   rule,
   index,
   count,
+  selected,
+  onSelect,
   onChange,
   onDelete,
   onMove,
@@ -22,6 +24,8 @@ function RuleRow({
   rule: TokenColorRule;
   index: number;
   count: number;
+  selected: boolean;
+  onSelect: () => void;
   onChange: (r: TokenColorRule) => void;
   onDelete: () => void;
   onMove: (dir: -1 | 1) => void;
@@ -38,17 +42,22 @@ function RuleRow({
   };
 
   return (
-    <div className="rounded border border-zinc-800 bg-zinc-900/60">
+    <div className={`rounded border ${selected ? 'border-sky-700 bg-sky-950/30' : 'border-zinc-800 bg-zinc-900/60'}`}>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-zinc-800/60"
-        onClick={() => setExpanded(!expanded)}
+        className={`flex w-full items-center gap-2 px-2 py-1.5 text-left ${selected ? 'hover:bg-sky-950/50' : 'hover:bg-zinc-800/60'}`}
+        onClick={() => {
+          onSelect();
+          setExpanded(selected ? !expanded : true);
+        }}
       >
         <span
           className="size-4 shrink-0 rounded-sm border border-zinc-600"
           style={{ background: rule.settings.foreground ?? 'transparent' }}
         />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[12px] text-zinc-200">{rule.name || scopeSummary(rule.scope)}</span>
+          <span className={`block truncate text-[12px] ${selected ? 'text-sky-100' : 'text-zinc-200'}`}>
+            {rule.name || scopeSummary(rule.scope)}
+          </span>
           {rule.name && <span className="block truncate font-mono text-[10.5px] text-zinc-500">{scopeSummary(rule.scope)}</span>}
         </span>
         <span
@@ -84,13 +93,6 @@ function RuleRow({
               onChange({ ...rule, scope: scopes.length === 1 ? scopes[0] : scopes });
             }}
           />
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-zinc-400">Foreground</span>
-            <ColorField
-              value={rule.settings.foreground ?? ''}
-              onChange={(hex) => onChange({ ...rule, settings: { ...rule.settings, foreground: hex } })}
-            />
-          </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             {STYLE_FLAGS.map((flag) => (
               <label key={flag} className="flex items-center gap-1 text-[11px] text-zinc-300">
@@ -128,6 +130,7 @@ function RuleRow({
 export function TokenEditor() {
   const theme = useActiveTheme();
   const setTokenColors = useThemeStore((s) => s.setTokenColors);
+  const { selection, select } = useUiStore();
   const rules = theme.tokenColors;
 
   const update = (i: number, rule: TokenColorRule) => {
@@ -136,10 +139,13 @@ export function TokenEditor() {
     setTokenColors(next);
   };
 
+  const selectedIndex = selection?.kind === 'token' ? selection.index : null;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-2">
       <p className="px-1 text-[11px] leading-snug text-zinc-500">
-        TextMate rules, applied top to bottom — later rules win. The code preview re-highlights live.
+        TextMate rules, applied top to bottom — later rules win. Click a rule to edit its color in the inspector; the
+        code preview re-highlights live.
       </p>
       {rules.map((rule, i) => (
         <RuleRow
@@ -147,19 +153,30 @@ export function TokenEditor() {
           rule={rule}
           index={i}
           count={rules.length}
+          selected={selectedIndex === i}
+          onSelect={() => select({ kind: 'token', index: i })}
           onChange={(r) => update(i, r)}
-          onDelete={() => setTokenColors(rules.filter((_, j) => j !== i))}
+          onDelete={() => {
+            setTokenColors(rules.filter((_, j) => j !== i));
+            if (selectedIndex === i) select(null);
+            else if (selectedIndex !== null && selectedIndex > i) select({ kind: 'token', index: selectedIndex - 1 });
+          }}
           onMove={(dir) => {
             const next = [...rules];
             const [moved] = next.splice(i, 1);
             next.splice(i + dir, 0, moved);
             setTokenColors(next);
+            if (selectedIndex === i) select({ kind: 'token', index: i + dir });
+            else if (selectedIndex === i + dir) select({ kind: 'token', index: i });
           }}
         />
       ))}
       <button
         className="mt-1 rounded border border-dashed border-zinc-700 px-2 py-1.5 text-[12px] text-zinc-400 hover:bg-zinc-800"
-        onClick={() => setTokenColors([...rules, { name: 'New rule', scope: 'keyword', settings: { foreground: '#c586c0' } }])}
+        onClick={() => {
+          setTokenColors([...rules, { name: 'New rule', scope: 'keyword', settings: { foreground: '#c586c0' } }]);
+          select({ kind: 'token', index: rules.length });
+        }}
       >
         + Add rule
       </button>

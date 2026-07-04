@@ -125,7 +125,7 @@ export const useThemeStore = create<ThemeState>()(
       },
     ),
     {
-      name: 'vs-theme-builder',
+      name: 'codeswatch',
       version: 1,
       // v0 shipped templates without "type"; heal any persisted theme.
       migrate: (persisted) => {

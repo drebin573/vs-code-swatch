@@ -3,46 +3,168 @@ import { HexAlphaColorPicker } from 'react-colorful';
 import { useActiveTheme, useThemeStore } from '../store/themeStore';
 import { useUiStore } from '../store/uiStore';
 import { defaults, describeKey } from '../theme/defaults';
+import type { SemanticTokenStyle } from '../theme/types';
+import { findRevealTargets } from '../preview/reveal';
+import { PaletteSwatches } from './PaletteSwatches';
 
 function normalizeHex(input: string): string | null {
   const v = input.trim().replace(/^([0-9a-fA-F]{3,8})$/, '#$1');
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v) ? v.toLowerCase() : null;
 }
 
+function semanticForeground(style: SemanticTokenStyle): string | undefined {
+  return typeof style === 'string' ? style : style.foreground;
+}
+
+function withSemanticForeground(style: SemanticTokenStyle, hex: string | undefined): SemanticTokenStyle {
+  const base: Exclude<SemanticTokenStyle, string> = typeof style === 'string' ? {} : { ...style };
+  delete base.foreground;
+  const hasFlags = Object.values(base).some(Boolean);
+  if (hex && !hasFlags) return hex;
+  return hex ? { ...base, foreground: hex } : base;
+}
+
+/**
+ * Whether (and how) the selected key is illustrated in the workbench mock,
+ * with a button to re-flash it. Keys with no exact region fall back to their
+ * family's region (e.g. statusBar.debuggingBackground → the status bar).
+ */
+function PreviewCoverageRow({ colorKey }: { colorKey: string }) {
+  const requestReveal = useUiStore((s) => s.requestReveal);
+  const [coverage, setCoverage] = useState<'exact' | 'family' | 'none'>('none');
+  useEffect(() => {
+    const match = findRevealTargets(document, colorKey);
+    setCoverage(match ? (match.exact ? 'exact' : 'family') : 'none');
+  }, [colorKey]);
+
+  return (
+    <div className="mt-1 flex items-center justify-between text-zinc-400">
+      <span>In preview</span>
+      {coverage === 'none' ? (
+        <span className="text-zinc-600" title="Nothing in the preview mock illustrates this key yet">
+          not illustrated
+        </span>
+      ) : (
+        <button
+          className="rounded text-sky-300 hover:text-sky-200 hover:underline"
+          title={
+            coverage === 'exact'
+              ? 'Flash the preview element(s) that use this color'
+              : 'This exact state isn’t mocked — flash the region it belongs to'
+          }
+          onClick={() => requestReveal(colorKey)}
+        >
+          {coverage === 'exact' ? 'visible — flash ✦' : 'region only — flash ✦'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** What the inspector is editing, resolved from the current selection. */
+interface Target {
+  title: string;
+  subtitle: string;
+  value: string | null;
+  onChange: (hex: string | undefined) => void;
+  /** Shown when the value is set; clicking clears it. */
+  clearLabel: string | null;
+  /** color-key selections also show the VS Code default. */
+  defaultValue?: string | null;
+  isSet?: boolean;
+}
+
 export function InspectorPanel() {
   const theme = useActiveTheme();
-  const setColor = useThemeStore((s) => s.setColor);
-  const selectedKey = useUiStore((s) => s.selectedKey);
+  const { setColor, setTokenColors, setSemanticTokenColors } = useThemeStore();
+  const { selection, select } = useUiStore();
 
-  const isSet = selectedKey !== null && selectedKey in theme.colors;
-  const defaultValue = selectedKey ? (defaults[theme.type][selectedKey] ?? null) : null;
-  const value = selectedKey ? (theme.colors[selectedKey] ?? defaultValue) : null;
+  let target: Target | null = null;
+
+  if (selection?.kind === 'color') {
+    const key = selection.key;
+    const isSet = key in theme.colors;
+    const defaultValue = defaults[theme.type][key] ?? null;
+    target = {
+      title: key,
+      subtitle: describeKey(key),
+      value: theme.colors[key] ?? defaultValue,
+      onChange: (hex) => setColor(key, hex),
+      clearLabel: isSet ? 'Clear — use VS Code default' : null,
+      defaultValue,
+      isSet,
+    };
+  } else if (selection?.kind === 'token') {
+    const rule = theme.tokenColors[selection.index];
+    if (rule) {
+      const scopes = Array.isArray(rule.scope) ? rule.scope.join(', ') : (rule.scope ?? '(global)');
+      target = {
+        title: rule.name || scopes,
+        subtitle: `Syntax rule · ${scopes}`,
+        value: rule.settings.foreground ?? null,
+        onChange: (hex) => {
+          const next = [...theme.tokenColors];
+          next[selection.index] = { ...rule, settings: { ...rule.settings, foreground: hex } };
+          setTokenColors(next);
+        },
+        clearLabel: rule.settings.foreground ? 'Remove foreground' : null,
+      };
+    }
+  } else if (selection?.kind === 'semantic') {
+    const style = theme.semanticTokenColors?.[selection.selector];
+    if (style !== undefined) {
+      target = {
+        title: selection.selector,
+        subtitle: 'Semantic selector · foreground',
+        value: semanticForeground(style) ?? null,
+        onChange: (hex) =>
+          setSemanticTokenColors({ ...theme.semanticTokenColors, [selection.selector]: withSemanticForeground(style, hex) }),
+        clearLabel: semanticForeground(style) ? 'Remove foreground' : null,
+      };
+    }
+  }
 
   const [hexInput, setHexInput] = useState('');
+  const value = target?.value ?? null;
   useEffect(() => {
     setHexInput(value ?? '');
-  }, [value, selectedKey]);
+  }, [value, selection]);
 
-  if (!selectedKey) {
+  if (!target) {
+    // Below lg there's no empty-state panel — the preview gets the space.
     return (
-      <div className="flex w-[290px] shrink-0 flex-col items-center justify-center border-l border-zinc-800 bg-zinc-900 p-6 text-center">
-        <p className="text-[13px] text-zinc-500">
-          Select a color key from the list, or click any part of the preview to jump to its color.
+      <div className="hidden w-[290px] shrink-0 flex-col gap-4 border-l border-zinc-800 bg-zinc-900 p-4 lg:flex">
+        <p className="pt-2 text-center text-[13px] text-zinc-500">
+          Select a UI color, a syntax rule, or a semantic selector — or click any part of the preview to jump to its
+          color.
         </p>
+        <PaletteSwatches onPick={null} />
       </div>
     );
   }
 
+  const { onChange } = target;
+
   return (
-    <div className="flex w-[290px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-zinc-800 bg-zinc-900 p-4">
-      <div>
-        <h2 className="break-all font-mono text-[13px] font-semibold text-zinc-100">{selectedKey}</h2>
-        <p className="mt-1 text-[12px] leading-snug text-zinc-400">{describeKey(selectedKey)}</p>
+    // A right-hand column on lg+; a dismissible bottom sheet below.
+    <div className="inspector-sheet fixed inset-x-0 bottom-0 z-40 flex max-h-[60dvh] flex-col gap-3 overflow-y-auto rounded-t-xl border-t border-zinc-700 bg-zinc-900 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] lg:static lg:z-auto lg:max-h-none lg:w-[290px] lg:shrink-0 lg:rounded-none lg:border-l lg:border-t-0 lg:border-zinc-800 lg:shadow-none">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h2 className="break-all font-mono text-[13px] font-semibold text-zinc-100">{target.title}</h2>
+          <p className="mt-1 text-[12px] leading-snug text-zinc-400">{target.subtitle}</p>
+        </div>
+        <button
+          className="shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 lg:hidden"
+          onClick={() => select(null)}
+          aria-label="Close inspector"
+        >
+          ✕
+        </button>
       </div>
 
       <HexAlphaColorPicker
         color={value ?? '#00000000'}
-        onChange={(c) => setColor(selectedKey, c)}
+        onChange={(c) => onChange(c)}
         style={{ width: '100%' }}
       />
 
@@ -61,39 +183,49 @@ export function InspectorPanel() {
           onChange={(e) => {
             setHexInput(e.target.value);
             const hex = normalizeHex(e.target.value);
-            if (hex) setColor(selectedKey, hex);
+            if (hex) onChange(hex);
           }}
           placeholder="#rrggbbaa"
           spellCheck={false}
         />
       </div>
 
-      <div className="rounded border border-zinc-800 bg-zinc-950/60 p-2 text-[12px]">
-        <div className="flex items-center justify-between text-zinc-400">
-          <span>Status</span>
-          <span className={isSet ? 'text-sky-300' : 'text-zinc-500'}>{isSet ? 'set in theme' : 'inherited default'}</span>
-        </div>
-        <div className="mt-1 flex items-center justify-between text-zinc-400">
-          <span>VS Code default</span>
-          <span className="flex items-center gap-1.5 font-mono">
-            {defaultValue ? (
-              <>
-                <span className="inline-block size-3 rounded-sm border border-zinc-600" style={{ background: defaultValue }} />
-                {defaultValue}
-              </>
-            ) : (
-              <span className="text-zinc-600">none</span>
-            )}
-          </span>
-        </div>
-      </div>
+      <PaletteSwatches onPick={(hex) => onChange(hex)} />
 
-      {isSet && (
+      {selection?.kind === 'color' && (
+        <div className="rounded border border-zinc-800 bg-zinc-950/60 p-2 text-[12px]">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span>Status</span>
+            <span className={target.isSet ? 'text-sky-300' : 'text-zinc-500'}>
+              {target.isSet ? 'set in theme' : 'inherited default'}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-zinc-400">
+            <span>VS Code default</span>
+            <span className="flex items-center gap-1.5 font-mono">
+              {target.defaultValue ? (
+                <>
+                  <span
+                    className="inline-block size-3 rounded-sm border border-zinc-600"
+                    style={{ background: target.defaultValue }}
+                  />
+                  {target.defaultValue}
+                </>
+              ) : (
+                <span className="text-zinc-600">none</span>
+              )}
+            </span>
+          </div>
+          <PreviewCoverageRow colorKey={selection.key} />
+        </div>
+      )}
+
+      {target.clearLabel && (
         <button
           className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-[12px] text-zinc-300 hover:bg-zinc-700"
-          onClick={() => setColor(selectedKey, undefined)}
+          onClick={() => onChange(undefined)}
         >
-          Clear — use VS Code default
+          {target.clearLabel}
         </button>
       )}
     </div>

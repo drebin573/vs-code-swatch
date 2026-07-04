@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { colorGroups, resolveColor } from '../theme/defaults';
 import { useActiveTheme } from '../store/themeStore';
 import { useUiStore } from '../store/uiStore';
@@ -18,15 +18,17 @@ function Swatch({ value }: { value: string | null }) {
 }
 
 function KeyRow({ theme, colorKey }: { theme: ThemeDoc; colorKey: string }) {
-  const { selectedKey, selectKey } = useUiStore();
+  const { selection, selectKey } = useUiStore();
+  const isSelected = selection?.kind === 'color' && selection.key === colorKey;
   const isSet = colorKey in theme.colors;
   const value = resolveColor(theme, colorKey);
   return (
     <button
+      data-list-key={colorKey}
       className={`flex w-full items-center gap-2 rounded px-2 py-[3px] text-left text-[12px] ${
-        selectedKey === colorKey ? 'bg-sky-900/60 text-sky-100' : 'text-zinc-300 hover:bg-zinc-800'
+        isSelected ? 'bg-sky-900/60 text-sky-100' : 'text-zinc-300 hover:bg-zinc-800'
       }`}
-      onClick={() => selectKey(colorKey)}
+      onClick={() => selectKey(colorKey, 'list')}
     >
       <Swatch value={value} />
       <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{colorKey}</span>
@@ -35,10 +37,37 @@ function KeyRow({ theme, colorKey }: { theme: ThemeDoc; colorKey: string }) {
   );
 }
 
+// Module-level so remounts (tab switches) don't replay an old reveal request.
+let consumedListRevealTick = 0;
+
 export function KeyList() {
   const theme = useActiveTheme();
-  const { search, setSearch } = useUiStore();
+  const { search, setSearch, listReveal } = useUiStore();
   const [open, setOpen] = useState<Record<string, boolean>>({ 'Base colors': true });
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Preview clicks reveal the key here too: expand its group, drop a search
+  // filter that would hide it, and scroll its row into view.
+  useEffect(() => {
+    if (!listReveal || listReveal.tick === consumedListRevealTick) return;
+    consumedListRevealTick = listReveal.tick;
+    const group = colorGroups.find((g) => g.keys.some((k) => k.key === listReveal.key));
+    if (!group) return;
+    const entry = group.keys.find((k) => k.key === listReveal.key)!;
+    const { search: query, setSearch: set } = useUiStore.getState();
+    const filter = query.trim().toLowerCase();
+    if (filter && !entry.key.toLowerCase().includes(filter) && !entry.description.toLowerCase().includes(filter)) {
+      set('');
+    }
+    setOpen((o) => ({ ...o, [group.group]: true }));
+    // Next macrotask: the expanded/unfiltered rows have rendered by then.
+    const id = window.setTimeout(() => {
+      listRef.current
+        ?.querySelector(`[data-list-key="${listReveal.key}"]`)
+        ?.scrollIntoView?.({ block: 'nearest' });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [listReveal]);
 
   const q = search.trim().toLowerCase();
   const visibleGroups = useMemo(() => {
@@ -63,7 +92,7 @@ export function KeyList() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-4">
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-1 pb-4">
         {visibleGroups.map((g) => {
           const expanded = q ? true : (open[g.group] ?? false);
           const setCount = g.keys.filter((k) => k.key in theme.colors).length;
@@ -75,8 +104,14 @@ export function KeyList() {
               >
                 <span className="w-3">{expanded ? '▾' : '▸'}</span>
                 <span className="flex-1">{g.group}</span>
-                {setCount > 0 && <span className="rounded bg-sky-900 px-1.5 text-[10px] text-sky-200">{setCount}</span>}
-                <span className="text-zinc-600">{g.keys.length}</span>
+                {setCount > 0 && (
+                  <span className="min-w-[30px] rounded-full bg-sky-900 px-1.5 py-px text-center text-[10px] tabular-nums text-sky-200">
+                    {setCount}
+                  </span>
+                )}
+                <span className="min-w-[30px] rounded-full bg-zinc-800/80 px-1.5 py-px text-center text-[10px] tabular-nums text-zinc-500">
+                  {g.keys.length}
+                </span>
               </button>
               {expanded && g.keys.map((k) => <KeyRow key={k.key} theme={theme} colorKey={k.key} />)}
             </div>

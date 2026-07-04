@@ -79,7 +79,7 @@ export function SideBar() {
   return (
     <div
       data-keys="sideBar.background sideBar.foreground sideBar.border"
-      className="flex w-[220px] shrink-0 flex-col"
+      className="hidden w-[220px] shrink-0 flex-col sm:flex"
       style={{
         background: cssVar('sideBar.background'),
         color: cssVar('sideBar.foreground', cssVar('foreground')),
@@ -103,7 +103,7 @@ export function SideBar() {
         }}
       >
         <ChevronDown size={14} />
-        vs-theme-builder
+        codeswatch
       </div>
       <div className="flex-1 overflow-hidden py-0.5">
         {rows.map((r) => (

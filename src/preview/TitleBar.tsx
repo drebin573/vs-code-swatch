@@ -22,7 +22,7 @@ export function TitleBar() {
         <span
           key={m}
           data-keys={i === 0 ? 'menubar.selectionBackground menubar.selectionForeground' : undefined}
-          className="rounded px-1.5 py-0.5"
+          className={`rounded px-1.5 py-0.5 ${i > 1 ? 'hidden md:inline' : ''}`}
           style={
             i === 0
               ? {
@@ -35,8 +35,8 @@ export function TitleBar() {
           {m}
         </span>
       ))}
-      <div className="flex-1" />
-      <span className="pr-2 opacity-80">my-theme — vs-theme-builder</span>
+      <div className="min-w-0 flex-1" />
+      <span className="truncate pr-2 opacity-80">my-theme — codeswatch</span>
     </div>
   );
 }

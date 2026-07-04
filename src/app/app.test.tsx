@@ -11,7 +11,7 @@ import App from '../App';
 describe('App', () => {
   it('renders workbench preview, key list, and header', () => {
     render(<App />);
-    expect(screen.getByText('Theme Forge')).toBeTruthy();
+    expect(screen.getByText('Codeswatch')).toBeTruthy();
     expect(screen.getByText('Explorer')).toBeTruthy(); // sidebar preview
     expect(screen.getAllByText(/Terminal/).length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText(/Search 944 colors/)).toBeTruthy();

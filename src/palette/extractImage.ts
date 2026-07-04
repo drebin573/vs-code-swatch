@@ -62,8 +62,24 @@ export function quantize(data: Uint8ClampedArray, k = 12): string[] {
 }
 
 const SAMPLE_SIZE = 96;
+const MAX_PALETTE_SIZE = 64;
 
-export async function extractFromImageFile(file: File, k = 12): Promise<Palette> {
+/** Counts distinct opaque colors, stopping early once `cap` is reached. */
+function countDistinctColors(data: Uint8ClampedArray, cap: number): number {
+  const seen = new Set<number>();
+  for (let i = 0; i < data.length && seen.size < cap; i += 4) {
+    if (data[i + 3] < 128) continue;
+    seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
+  }
+  return seen.size;
+}
+
+/**
+ * If `k` isn't given, size the palette to the image's own color count (capped)
+ * instead of a fixed default — flat swatch/reference images can have far more
+ * than a dozen distinct colors and shouldn't be quantized down needlessly.
+ */
+export async function extractFromImageFile(file: File, k?: number): Promise<Palette> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, SAMPLE_SIZE / Math.max(bitmap.width, bitmap.height));
   const w = Math.max(1, Math.round(bitmap.width * scale));
@@ -74,6 +90,8 @@ export async function extractFromImageFile(file: File, k = 12): Promise<Palette>
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
-  const hexes = quantize(ctx.getImageData(0, 0, w, h).data, k);
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const count = k ?? Math.min(MAX_PALETTE_SIZE, countDistinctColors(data, MAX_PALETTE_SIZE));
+  const hexes = quantize(data, count);
   return { name: file.name.replace(/\.\w+$/, ''), colors: hexes.map((hex) => ({ hex })) };
 }

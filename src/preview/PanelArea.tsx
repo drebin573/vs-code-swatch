@@ -22,7 +22,7 @@ function Transcript() {
     <div className="whitespace-pre font-mono text-[12px] leading-[17px]">
       <div>
         <span style={{ color: ansi('ansiGreen') }}>➜</span>{' '}
-        <span style={{ color: ansi('ansiCyan') }}>vs-theme-builder</span>{' '}
+        <span style={{ color: ansi('ansiCyan') }}>codeswatch</span>{' '}
         <span style={{ color: ansi('ansiBlue') }}>git:(</span>
         <span style={{ color: ansi('ansiRed') }}>main</span>
         <span style={{ color: ansi('ansiBlue') }}>)</span> npm test
@@ -66,7 +66,7 @@ function Transcript() {
       </div>
       <div className="mt-1">
         <span style={{ color: ansi('ansiGreen') }}>➜</span>{' '}
-        <span style={{ color: ansi('ansiCyan') }}>vs-theme-builder</span>{' '}
+        <span style={{ color: ansi('ansiCyan') }}>codeswatch</span>{' '}
         <span
           data-keys="terminalCursor.foreground"
           className="ml-1 inline-block h-[14px] w-[7px] translate-y-[2px]"

@@ -1,6 +1,6 @@
 import { useActiveTheme, useThemeStore } from '../store/themeStore';
+import { useUiStore } from '../store/uiStore';
 import type { SemanticTokenStyle } from '../theme/types';
-import { ColorField } from './ColorField';
 
 interface NormalStyle {
   foreground?: string;
@@ -23,9 +23,12 @@ function denormalize(style: NormalStyle): SemanticTokenStyle {
 
 const FLAGS = ['italic', 'bold', 'underline', 'strikethrough'] as const;
 
+const checker = 'repeating-conic-gradient(#52525b 0% 25%, #27272a 0% 50%) 0 0 / 8px 8px';
+
 export function SemanticEditor() {
   const theme = useActiveTheme();
   const { setSemanticTokenColors, setSemanticHighlighting } = useThemeStore();
+  const { selection, select } = useUiStore();
   const map = theme.semanticTokenColors ?? {};
   const entries = Object.entries(map);
 
@@ -36,6 +39,8 @@ export function SemanticEditor() {
     else next[selector] = denormalize(style);
     setSemanticTokenColors(next);
   };
+
+  const selectedSelector = selection?.kind === 'semantic' ? selection.selector : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-2">
@@ -49,32 +54,48 @@ export function SemanticEditor() {
       </label>
       <p className="px-1 text-[11px] leading-snug text-zinc-500">
         Language-server token styles, e.g. <code className="text-zinc-400">variable.readonly</code> or{' '}
-        <code className="text-zinc-400">*.mutable:rust</code>. These apply on top of TextMate rules in VS Code (the code
-        preview shows TextMate rules only).
+        <code className="text-zinc-400">*.mutable:rust</code>. Click a selector to edit its color in the inspector.
+        These apply on top of TextMate rules in VS Code (the code preview shows TextMate rules only).
       </p>
       {entries.map(([selector, style]) => {
         const s = normalize(style);
+        const selected = selectedSelector === selector;
         return (
-          <div key={selector} className="space-y-1.5 rounded border border-zinc-800 bg-zinc-900/60 p-2">
+          <div
+            key={selector}
+            className={`space-y-1.5 rounded border p-2 ${selected ? 'border-sky-700 bg-sky-950/30' : 'border-zinc-800 bg-zinc-900/60'}`}
+          >
             <div className="flex items-center gap-2">
+              <button
+                className="size-5 shrink-0 rounded-sm border border-zinc-600 hover:border-zinc-300"
+                style={{ background: s.foreground ? `linear-gradient(${s.foreground}, ${s.foreground}), ${checker}` : checker }}
+                title="Edit color in the inspector"
+                onClick={() => select({ kind: 'semantic', selector })}
+              />
               <input
                 className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 font-mono text-[11.5px] text-zinc-200"
                 defaultValue={selector}
                 spellCheck={false}
+                onFocus={() => select({ kind: 'semantic', selector })}
                 onBlur={(e) => {
                   const v = e.target.value.trim();
-                  if (v && v !== selector) setEntry(v, s, selector);
+                  if (v && v !== selector) {
+                    setEntry(v, s, selector);
+                    if (selectedSelector === selector) select({ kind: 'semantic', selector: v });
+                  }
                 }}
               />
               <button
                 className="rounded border border-red-900 px-1.5 py-0.5 text-[11px] text-red-400 hover:bg-red-950"
-                onClick={() => setEntry(selector, null)}
+                onClick={() => {
+                  setEntry(selector, null);
+                  if (selectedSelector === selector) select(null);
+                }}
               >
                 ✕
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <ColorField value={s.foreground ?? ''} onChange={(hex) => setEntry(selector, { ...s, foreground: hex })} />
               {FLAGS.map((flag) => (
                 <label key={flag} className="flex items-center gap-1 text-[11px] text-zinc-300">
                   <input type="checkbox" checked={!!s[flag]} onChange={(e) => setEntry(selector, { ...s, [flag]: e.target.checked })} />
@@ -92,6 +113,7 @@ export function SemanticEditor() {
           let n = 2;
           while (name in map) name = `variable.readonly.${n++}`;
           setEntry(name, { foreground: '#4fc1ff' });
+          select({ kind: 'semantic', selector: name });
         }}
       >
         + Add selector
