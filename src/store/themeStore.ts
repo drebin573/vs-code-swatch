@@ -8,6 +8,12 @@ export interface ThemeState {
   themes: Record<string, ThemeDoc>;
   order: string[];
   activeId: string;
+  /**
+   * Per-theme snapshot of `colors` from when the theme was created, imported,
+   * or duplicated. "Changed" indicators compare against this, so a fresh
+   * template shows zero changes even though it ships many explicit colors.
+   */
+  baselines: Record<string, Record<string, string>>;
 
   setColor: (key: string, value: string | undefined) => void;
   setColors: (patch: Record<string, string | undefined>) => void;
@@ -47,6 +53,7 @@ export const useThemeStore = create<ThemeState>()(
         themes: { [initialId]: initialTheme },
         order: [initialId],
         activeId: initialId,
+        baselines: { [initialId]: { ...initialTheme.colors } },
 
         setColor: (key, value) =>
           set((s) =>
@@ -84,6 +91,7 @@ export const useThemeStore = create<ThemeState>()(
             themes: { ...s.themes, [id]: doc },
             order: [...s.order, id],
             activeId: id,
+            baselines: { ...s.baselines, [id]: { ...doc.colors } },
           }));
           return id;
         },
@@ -97,6 +105,8 @@ export const useThemeStore = create<ThemeState>()(
               themes: { ...s.themes, [copy]: { ...src, name: `${src.name} Copy` } },
               order: [...s.order, copy],
               activeId: copy,
+              // The copy starts clean: its changes are measured from the fork.
+              baselines: { ...s.baselines, [copy]: { ...src.colors } },
             };
           });
           return copy;
@@ -107,16 +117,23 @@ export const useThemeStore = create<ThemeState>()(
             if (s.order.length <= 1) return {};
             const themes = { ...s.themes };
             delete themes[id];
+            const baselines = { ...s.baselines };
+            delete baselines[id];
             const order = s.order.filter((x) => x !== id);
             return {
               themes,
               order,
+              baselines,
               activeId: s.activeId === id ? order[0] : s.activeId,
             };
           }),
 
         setActive: (activeId) => set({ activeId }),
-        replaceActiveTheme: (doc) => set((s) => mutateActive(s, () => doc)),
+        replaceActiveTheme: (doc) =>
+          set((s) => ({
+            ...mutateActive(s, () => doc),
+            baselines: { ...s.baselines, [s.activeId]: { ...doc.colors } },
+          })),
       }),
       {
         // Only theme content participates in undo/redo, not which theme is open.
@@ -125,13 +142,19 @@ export const useThemeStore = create<ThemeState>()(
       },
     ),
     {
-      name: 'codeswatch',
-      version: 1,
-      // v0 shipped templates without "type"; heal any persisted theme.
+      name: 'vs-codeswatch',
+      version: 2,
+      // v0 shipped templates without "type"; v1 had no baselines.
       migrate: (persisted) => {
         const state = persisted as ThemeState;
         for (const doc of Object.values(state.themes ?? {})) {
           if (doc.type !== 'dark' && doc.type !== 'light') doc.type = guessType(doc);
+        }
+        // Snapshot current colors as the baseline so pre-existing themes
+        // start with zero changes rather than everything marked changed.
+        state.baselines ??= {};
+        for (const [id, doc] of Object.entries(state.themes ?? {})) {
+          state.baselines[id] ??= { ...doc.colors };
         }
         return state;
       },
@@ -147,6 +170,26 @@ function guessType(doc: ThemeDoc): 'dark' | 'light' {
 }
 
 export const useActiveTheme = (): ThemeDoc => useThemeStore((s) => s.themes[s.activeId]);
+
+export const useActiveBaseline = (): Record<string, string> | undefined =>
+  useThemeStore((s) => s.baselines[s.activeId]);
+
+/**
+ * Color keys whose value differs from the theme's starting point (template,
+ * import, or fork) — added, edited, or cleared since then.
+ */
+export function changedColorKeys(doc: ThemeDoc, baseline: Record<string, string> | undefined): Set<string> {
+  // No baseline (shouldn't happen post-migration): treat current as baseline.
+  const base = baseline ?? doc.colors;
+  const changed = new Set<string>();
+  for (const [key, value] of Object.entries(doc.colors)) {
+    if (base[key]?.toLowerCase() !== value.toLowerCase()) changed.add(key);
+  }
+  for (const key of Object.keys(base)) {
+    if (!(key in doc.colors)) changed.add(key);
+  }
+  return changed;
+}
 
 export const undo = () => useThemeStore.temporal.getState().undo();
 export const redo = () => useThemeStore.temporal.getState().redo();
