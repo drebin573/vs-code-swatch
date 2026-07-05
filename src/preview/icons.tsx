@@ -85,6 +85,12 @@ export const ChevronRight = ({ size, ...p }: P) => (
   </svg>
 );
 
+export const ChevronLeft = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p} fill="none" stroke="currentColor">
+    <path d="M10 4l-4 4 4 4" strokeWidth="1.3" />
+  </svg>
+);
+
 export const CircleDot = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}>
     <circle cx="8" cy="8" r="3.5" />

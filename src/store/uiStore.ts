@@ -12,7 +12,7 @@ export interface RevealPrefs {
   flashOnPreviewClick: boolean;
 }
 
-const PREFS_STORAGE_KEY = 'codeswatch:reveal-prefs';
+const PREFS_STORAGE_KEY = 'vs-codeswatch:reveal-prefs';
 const defaultPrefs: RevealPrefs = { flashOnListSelect: true, flashOnPreviewClick: false };
 
 function loadPrefs(): RevealPrefs {
@@ -20,6 +20,31 @@ function loadPrefs(): RevealPrefs {
     return { ...defaultPrefs, ...JSON.parse(localStorage.getItem(PREFS_STORAGE_KEY) ?? '{}') };
   } catch {
     return defaultPrefs;
+  }
+}
+
+/** Whether the desktop (lg+) editor rail / inspector are collapsed to a thin strip. */
+interface LayoutPrefs {
+  leftRailCollapsed: boolean;
+  inspectorCollapsed: boolean;
+}
+
+const LAYOUT_STORAGE_KEY = 'vs-codeswatch:layout';
+const defaultLayout: LayoutPrefs = { leftRailCollapsed: false, inspectorCollapsed: false };
+
+function loadLayout(): LayoutPrefs {
+  try {
+    return { ...defaultLayout, ...JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) ?? '{}') };
+  } catch {
+    return defaultLayout;
+  }
+}
+
+function saveLayout(layout: LayoutPrefs) {
+  try {
+    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+  } catch {
+    // Storage may be unavailable (private mode); layout still applies this session.
   }
 }
 
@@ -41,6 +66,9 @@ export interface UiState {
   previewLanguage: string;
   /** Below lg the left rail is a slide-in drawer; this is its open state. */
   railOpen: boolean;
+  /** On lg+, whether the editor rail / inspector are collapsed to a thin strip. */
+  leftRailCollapsed: boolean;
+  inspectorCollapsed: boolean;
   /**
    * Ask the preview to flash the region(s) using this color key. `tick` bumps
    * on every request so re-selecting the same key re-triggers the flash.
@@ -59,7 +87,11 @@ export interface UiState {
   setEditorTab: (tab: EditorTab) => void;
   setPreviewLanguage: (lang: string) => void;
   setRailOpen: (open: boolean) => void;
+  setLeftRailCollapsed: (collapsed: boolean) => void;
+  setInspectorCollapsed: (collapsed: boolean) => void;
 }
+
+const initialLayout = loadLayout();
 
 export const useUiStore = create<UiState>()((set) => ({
   selection: null,
@@ -67,6 +99,8 @@ export const useUiStore = create<UiState>()((set) => ({
   editorTab: 'colors',
   previewLanguage: 'typescript',
   railOpen: false,
+  leftRailCollapsed: initialLayout.leftRailCollapsed,
+  inspectorCollapsed: initialLayout.inspectorCollapsed,
   reveal: null,
   listReveal: null,
   prefs: loadPrefs(),
@@ -101,4 +135,14 @@ export const useUiStore = create<UiState>()((set) => ({
   setEditorTab: (editorTab) => set({ editorTab }),
   setPreviewLanguage: (previewLanguage) => set({ previewLanguage }),
   setRailOpen: (railOpen) => set({ railOpen }),
+  setLeftRailCollapsed: (leftRailCollapsed) =>
+    set((s) => {
+      saveLayout({ leftRailCollapsed, inspectorCollapsed: s.inspectorCollapsed });
+      return { leftRailCollapsed };
+    }),
+  setInspectorCollapsed: (inspectorCollapsed) =>
+    set((s) => {
+      saveLayout({ leftRailCollapsed: s.leftRailCollapsed, inspectorCollapsed });
+      return { inspectorCollapsed };
+    }),
 }));
