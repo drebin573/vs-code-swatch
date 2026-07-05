@@ -5,6 +5,8 @@
   font-size: 14px;
 }
 
+/* On both html and body: Chrome only honors it on the scrolling element. */
+html,
 body {
   margin: 0;
   overscroll-behavior: none;
@@ -14,6 +16,14 @@ body {
 code,
 pre {
   font-family: 'SF Mono', Menlo, Monaco, 'Cascadia Code', Consolas, monospace;
+}
+
+/* Hide native scrollbars where the workbench mock draws its own. */
+.no-native-scrollbar {
+  scrollbar-width: none;
+}
+.no-native-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* The Ko-fi cup gives a happy little wiggle when the badge is hovered. */
