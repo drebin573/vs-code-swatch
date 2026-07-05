@@ -1,4 +1,7 @@
-const KOFI_URL = 'https://ko-fi.com/drebin573';
+import { useEffect, useState } from 'react';
+
+// Ko-fi's official embed panel — the same iframe their overlay widget opens.
+const KOFI_EMBED_URL = 'https://ko-fi.com/drebin573/?hidefeed=true&widget=true&embed=true';
 
 function KofiIcon() {
   return (
@@ -14,17 +17,43 @@ function KofiIcon() {
   );
 }
 
-/** Always-visible support pill, floating over the bottom-right corner. */
+/** Always-visible support pill; opens the Ko-fi donation panel in-page. */
 export function KofiBadge() {
+  const [open, setOpen] = useState(false);
+  // Stays true after the first open so the iframe isn't reloaded on reopen.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   return (
-    <a
-      href={KOFI_URL}
-      target="_blank"
-      rel="noreferrer"
-      className="kofi-badge fixed bottom-4 right-4 z-30 flex items-center gap-1.5 rounded-full bg-[#ff5e5b] py-2 pl-3 pr-3.5 text-[12px] font-semibold text-white shadow-lg shadow-black/50 transition-transform hover:scale-105"
-    >
-      <KofiIcon />
-      Support on Ko-fi
-    </a>
+    <>
+      {mounted && (
+        <div className={open ? 'fixed inset-0 z-40' : 'hidden'} role="dialog" aria-modal="true" aria-label="Support on Ko-fi">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-16 right-4 flex h-[620px] max-h-[calc(100dvh-5.5rem)] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl bg-[#f9f9f9] shadow-2xl shadow-black/60">
+            <iframe src={KOFI_EMBED_URL} title="Support drebin573 on Ko-fi" className="h-full w-full border-0" loading="lazy" />
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => {
+          setMounted(true);
+          setOpen((v) => !v);
+        }}
+        aria-expanded={open}
+        className="kofi-badge fixed bottom-4 right-4 z-50 flex cursor-pointer items-center gap-1.5 rounded-full bg-[#ff5e5b] py-2 pl-3 pr-3.5 text-[12px] font-semibold text-white shadow-lg shadow-black/50 transition-transform hover:scale-105"
+      >
+        <KofiIcon />
+        {open ? 'Close' : 'Support on Ko-fi'}
+      </button>
+    </>
   );
 }
