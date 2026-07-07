@@ -156,7 +156,7 @@ export function Header() {
 
       <span className="select-none text-[14px] font-semibold tracking-tight text-zinc-100 md:mr-2">
         <span className="text-sky-400">◈</span>
-        <span className="hidden md:inline"> Codeswatch</span>
+        <span className="hidden md:inline"> VS-CodeSwatch</span>
       </span>
 
       <select

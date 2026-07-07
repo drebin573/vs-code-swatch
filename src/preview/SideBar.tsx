@@ -103,7 +103,7 @@ export function SideBar() {
         }}
       >
         <ChevronDown size={14} />
-        codeswatch
+        vs-codeswatch
       </div>
       <div className="flex-1 overflow-hidden py-0.5">
         {rows.map((r) => (

@@ -36,7 +36,7 @@ export function TitleBar() {
         </span>
       ))}
       <div className="min-w-0 flex-1" />
-      <span className="truncate pr-2 opacity-80">my-theme — codeswatch</span>
+      <span className="truncate pr-2 opacity-80">my-theme — vs-codeswatch</span>
     </div>
   );
 }

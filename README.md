@@ -1,12 +1,12 @@
-# Codeswatch
+# VS-CodeSwatch
 
-A web-based theme builder for VS Code and every editor built on it — Cursor, VSCodium, Windsurf, and friends. Free, open source, no accounts.
+A web-based theme builder for VS Code and every editor built on it (Cursor, VSCodium, Windsurf, Antigravity, etc). Free, open source, no accounts. [Try the demo!](https://demo.codes.watch)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 
 ## About
 
-Designing a VS Code theme means hand-editing a JSON file with ~950 color keys and reloading to see what changed. Codeswatch gives you a live, pixel-faithful workbench preview instead: click any part of the mock editor to jump to its color, tweak it with a picker, and watch the whole workbench — syntax highlighting and integrated terminal included — update in real time.
+Designing a VS Code theme means hand-editing a JSON file with ~950 color keys and reloading to see what changed. VS-CodeSwatch gives you a live, pixel-faithful workbench preview instead: click any part of the mock editor to jump to its color, tweak it with a picker, and watch the whole thing update in real time.
 
 Unlike other theme builders, it's fully open source and adds the two things they always seem to miss: **palette import** (build a theme from an image, a coolors link, or your terminal's color scheme) and **ANSI terminal colors** (with a live terminal preview).
 
@@ -55,12 +55,12 @@ curl -sL https://raw.githubusercontent.com/microsoft/vscode-docs/main/api/refere
 node scripts/generate-defaults.ts /tmp/vscode /tmp/theme-color.md
 ```
 
-The generator parses every `registerColor()` call with the TypeScript compiler API, ports VS Code's exact color math (`lighten`/`darken`/`transparent`/`mix`/…), and resolves the full reference graph to concrete hex values per theme type.
-
 ## Contributing
 
-Issues and PRs are welcome — this project exists because the alternatives weren't open source. Good first contributions: more preview surfaces (diff editor, notifications, quick input), more terminal scheme formats, better palette→slot heuristics.
+Issues and PRs are welcome! This project exists because the alternatives weren't open source. Good first contributions: more preview surfaces (diff editor, notifications, quick input), more terminal scheme formats, better palette→slot heuristics.
 
 ## License
 
-Codeswatch is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. Vendored default-color data is derived from [microsoft/vscode](https://github.com/microsoft/vscode) (MIT).
+VS-CodeSwatch is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. Vendored default-color data is derived from [microsoft/vscode](https://github.com/microsoft/vscode) (MIT).
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/T1I322HUMQ)

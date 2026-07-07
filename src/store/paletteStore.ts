@@ -17,6 +17,6 @@ export const usePaletteStore = create<PaletteState>()(
       setPalette: (palette) => set({ palette }),
       setImportOpen: (importOpen) => set({ importOpen }),
     }),
-    { name: 'codeswatch-palette', partialize: (s) => ({ palette: s.palette }) },
+    { name: 'vs-codeswatch-palette', partialize: (s) => ({ palette: s.palette }) },
   ),
 );

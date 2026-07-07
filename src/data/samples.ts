@@ -170,7 +170,7 @@ func Rank(slots []Slot) []Slot {
   {
     lang: 'markdown',
     label: 'Markdown',
-    code: `# Codeswatch
+    code: `# VS-CodeSwatch
 
 An **open-source** theme builder for VS Code and every editor built on it.
 
@@ -186,6 +186,6 @@ An **open-source** theme builder for VS Code and every editor built on it.
 npm install && npm run dev
 \`\`\`
 
-[Contribute on GitHub](https://github.com/example/codeswatch)`,
+[Contribute on GitHub](https://github.com/example/vs-codeswatch)`,
   },
 ];
