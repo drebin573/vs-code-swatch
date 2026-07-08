@@ -1,6 +1,6 @@
 # VS-CodeSwatch
 
-A web-based theme builder for VS Code and every editor built on it (Cursor, VSCodium, Windsurf, Antigravity, etc). Free, open source, no accounts. [Try the demo!](https://demo.codes.watch)
+A web-based theme builder for VS Code and every editor built on it (Cursor, VSCodium, Windsurf, Antigravity, etc). Free, open source, no accounts. [Try the demo!](https://demo.vscodes.watch)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 
