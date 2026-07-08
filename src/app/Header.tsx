@@ -10,8 +10,7 @@ import type { ThemeDoc } from '../theme/types';
 const btn =
   'rounded px-2.5 py-1 text-[12px] text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700 bg-zinc-800 cursor-pointer';
 
-// TODO: placeholder — swap for the real repo once it exists.
-const GITHUB_URL = 'https://github.com/';
+const GITHUB_URL = 'https://github.com/drebin573/vs-code-swatch';
 
 const iconLink = 'rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100';
 
@@ -154,9 +153,9 @@ export function Header() {
         <PanelIcon />
       </button>
 
-      <span className="select-none text-[14px] font-semibold tracking-tight text-zinc-100 md:mr-2">
-        <span className="text-sky-400">◈</span>
-        <span className="hidden md:inline"> VS-CodeSwatch</span>
+      <span className="flex select-none items-center gap-1.5 text-[14px] font-semibold tracking-tight text-zinc-100 md:mr-2">
+        <img src="/favicon.png" alt="" width={16} height={16} className="rounded-full" />
+        <span className="hidden md:inline">VS-CodeSwatch</span>
       </span>
 
       <select

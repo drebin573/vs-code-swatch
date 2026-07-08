@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { HexAlphaColorPicker } from 'react-colorful';
 import { useActiveBaseline, useActiveTheme, useThemeStore } from '../store/themeStore';
 import { useUiStore } from '../store/uiStore';
-import { defaults, describeKey } from '../theme/defaults';
+import { defaults, describeKey, fullLabelForKey } from '../theme/defaults';
 import type { SemanticTokenStyle } from '../theme/types';
 import { findRevealTargets } from '../preview/reveal';
 import { ChevronLeft, ChevronRight } from '../preview/icons';
@@ -75,6 +75,8 @@ interface Target {
   isSet?: boolean;
   /** Differs from the theme's starting point (template or import). */
   changed?: boolean;
+  /** Raw dotted key, shown as a tooltip on the (human-readable) title. */
+  rawKey?: string;
 }
 
 export function InspectorPanel() {
@@ -91,7 +93,7 @@ export function InspectorPanel() {
     const defaultValue = defaults[theme.type][key] ?? null;
     const base = baseline ?? theme.colors;
     target = {
-      title: key,
+      title: fullLabelForKey(key),
       subtitle: describeKey(key),
       value: theme.colors[key] ?? defaultValue,
       onChange: (hex) => setColor(key, hex),
@@ -99,6 +101,7 @@ export function InspectorPanel() {
       defaultValue,
       isSet,
       changed: (theme.colors[key]?.toLowerCase() ?? null) !== (base[key]?.toLowerCase() ?? null),
+      rawKey: key,
     };
   } else if (selection?.kind === 'token') {
     const rule = theme.tokenColors[selection.index];
@@ -193,7 +196,12 @@ export function InspectorPanel() {
       >
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <h2 className="break-all font-mono text-[13px] font-semibold text-zinc-100">{target.title}</h2>
+            <h2
+              title={target.rawKey}
+              className={`break-all text-[13px] font-semibold text-zinc-100 ${target.rawKey ? '' : 'font-mono'}`}
+            >
+              {target.title}
+            </h2>
             <p className="mt-1 text-[12px] leading-snug text-zinc-400">{target.subtitle}</p>
           </div>
           <button

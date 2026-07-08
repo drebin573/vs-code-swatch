@@ -25,8 +25,8 @@ describe('App', () => {
     // Row shows a readable label now; the raw key lives in its title attribute.
     const row = await screen.findByTitle('terminal.ansiRed');
     fireEvent.click(row);
-    // Inspector shows the key name as a heading plus its description.
-    expect(screen.getByText('terminal.ansiRed')).toBeTruthy();
+    // Inspector shows a readable heading (raw key is now just its tooltip).
+    expect(screen.getByText('Terminal ANSI Red')).toBeTruthy();
     expect(screen.getByText(/Clear|inherited default|set in theme/)).toBeTruthy();
     cleanup();
   });

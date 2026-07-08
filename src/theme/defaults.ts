@@ -64,6 +64,11 @@ export function labelForKey(key: string): string {
   return labels.get(key) ?? key;
 }
 
+/** Unstripped label ("sideBar.background" → "Side Bar Background") for contexts with no group heading for context. */
+export function fullLabelForKey(key: string): string {
+  return toLabel(keyWords(key));
+}
+
 // Word-split searchable form ("terminal ansi bright blue") so query substrings
 // can't span word joints (searching "term" must not hit list.filterMatch…).
 const searchTexts = new Map<string, string>();
